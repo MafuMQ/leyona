@@ -27,6 +27,9 @@ import {
 } from "lucide-react";
 import type { Market } from "@/lib/fixtures";
 import { amount } from "@/lib/money";
+import TrendingHome from "./trending-home";
+import PredictionCard, { groupPredictionMarkets } from "./prediction-card";
+import AbacusMark from "./abacus-mark";
 type Position = {
   market_id: string;
   question: string;
@@ -307,6 +310,18 @@ export default function Dashboard() {
   }
   const markets = state?.markets ?? [],
     portfolio = state?.portfolio;
+  const showHome =
+    page === "Markets" &&
+    category === "All" &&
+    !search.trim() &&
+    filter === "Trending";
+  function chooseTopic(topic: string) {
+    setPage("Markets");
+    setCategory(topic);
+    setSearch("");
+    setFilter("Trending");
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }
   const current = markets.find((m) => m.id === selected?.id) ?? selected;
   const shown = markets.filter(
     (m) =>
@@ -395,100 +410,102 @@ export default function Dashboard() {
             : `${result.quantity - result.remaining} shares filled${result.remaining ? `; ${result.remaining} unfilled` : ""}.`,
       );
   }
-  const marketCard = (m: Market) => (
-    <article className="market-card" key={m.id}>
-      <div className="card-top">
-        <button
-          className={`market-icon icon-${m.category.toLowerCase()}`}
-          onClick={() => openMarket(m)}
-          aria-label={`Open ${m.question}`}
-        >
-          {m.icon}
-        </button>
-        <button className="card-question" onClick={() => openMarket(m)}>
-          {m.question}
-        </button>
-        <button
-          className={`icon-button bookmark ${state?.watchlist.includes(m.id) ? "saved" : ""}`}
-          aria-label="Toggle watchlist"
-          onClick={() =>
-            requireUser() && void call("watchlist", { marketId: m.id })
-          }
-        >
-          <Bookmark size={16} />
-        </button>
-      </div>
-      <div className="card-probability">
-        <span className="chance">
-          {probability(m.yes_price)}
-          <small>chance</small>
-        </span>
-        <span className={`category-label ${m.live ? "live-label" : ""}`}>
-          {m.live ? (
-            <>
-              <i /> LIVE
-            </>
-          ) : (
-            m.category
-          )}
-        </span>
-      </div>
-      <div className="outcome-buttons">
-        <button onClick={() => openMarket(m, "yes")} className="yes">
-          Yes <span>{(m.yes_price / 100).toFixed(1)}¢</span>
-          <ArrowUpRight size={14} />
-        </button>
-        <button onClick={() => openMarket(m, "no")} className="no">
-          No <span>{((10000 - m.yes_price) / 100).toFixed(1)}¢</span>
-          <ArrowUpRight size={14} />
-        </button>
-      </div>
-      <div className="card-footer">
-        <span>{display(m.volume)} cr Vol.</span>
-        <span>
-          {m.status !== "open" ? (
-            <b className="status">{m.status}</b>
-          ) : m.live ? (
-            <span className="score">{m.score}</span>
-          ) : (
-            <>
-              <Clock size={12} />{" "}
-              {new Date(m.closes_at).toLocaleDateString("en-ZA", {
-                month: "short",
-                day: "numeric",
-              })}
-            </>
-          )}
-        </span>
-        <button
-          title="Add Yes to combo"
-          aria-label={`Add ${m.question} Yes to combo`}
-          onClick={() => addLeg(m, "yes")}
-        >
-          <Layers3 size={15} />
-          <Plus size={12} />
-        </button>
-      </div>
-    </article>
-  );
+  const cardGroups = groupPredictionMarkets(shown);
   return (
     <>
       <header className="site-header">
-        <div className="header-inner">
+        <div className="header-inner single-header">
           <button
             className="brand"
-            onClick={() => {
-              setPage("Markets");
-              setCategory("All");
-            }}
+            aria-label="Leyona home"
+            onClick={() => chooseTopic("All")}
           >
             <span className="brand-mark">
-              <BarChart3 size={22} />
+              <AbacusMark />
             </span>
-            leyona<span className="beta">BETA</span>
+            leyona
           </button>
+          <span className="header-divider" aria-hidden="true" />
+          <nav className="main-nav unified-nav" aria-label="Main navigation">
+            {[
+              {
+                label: "Trending",
+                target: "Markets",
+                icon: <TrendingUp size={15} />,
+              },
+              {
+                label: "Combos",
+                target: "Combos",
+                icon: <Layers3 size={15} />,
+              },
+              { label: "Live", target: "Live", icon: <Zap size={15} /> },
+            ].map((n) => (
+              <button
+                key={n.label}
+                className={
+                  page === n.target &&
+                  (n.target !== "Markets" || category === "All")
+                    ? "active"
+                    : ""
+                }
+                aria-current={
+                  page === n.target &&
+                  (n.target !== "Markets" || category === "All")
+                    ? "page"
+                    : undefined
+                }
+                onClick={() => {
+                  setPage(n.target);
+                  setCategory("All");
+                  setSearch("");
+                  setFilter("Trending");
+                }}
+              >
+                {n.icon}
+                {n.label}
+                {n.label === "Live" && <span className="live-dot" />}
+                {n.label === "Combos" && legs.length > 0 && (
+                  <span className="count">{legs.length}</span>
+                )}
+              </button>
+            ))}
+            <span className="nav-divider" aria-hidden="true" />
+            {categories.slice(1).map((c, i) => (
+              <button
+                className={
+                  page === "Markets" && category === c
+                    ? `active topic-nav${i >= 4 ? " additional-topic-nav" : ""}`
+                    : `topic-nav${i >= 4 ? " additional-topic-nav" : ""}`
+                }
+                key={c}
+                onClick={() => chooseTopic(c)}
+              >
+                {c}
+              </button>
+            ))}
+            <details className="nav-more">
+              <summary>
+                More <ChevronDown size={12} />
+              </summary>
+              <div className="more-topics">
+                {categories.slice(1).map((c) => (
+                  <button
+                    key={c}
+                    onClick={(e) => {
+                      chooseTopic(c);
+                      e.currentTarget
+                        .closest("details")
+                        ?.removeAttribute("open");
+                    }}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </details>
+          </nav>
           <div className="header-search">
-            <Search size={18} />
+            <Search size={16} />
             <input
               aria-label="Search markets"
               placeholder="Search markets"
@@ -496,11 +513,50 @@ export default function Dashboard() {
               onChange={(e) => {
                 setSearch(e.target.value);
                 setPage("Markets");
+                setCategory("All");
+                setFilter("Trending");
               }}
             />
             <kbd>/</kbd>
           </div>
           <div className="header-actions">
+            <details className="mobile-search">
+              <summary aria-label="Open market search">
+                <Search size={17} />
+              </summary>
+              <div className="mobile-search-field">
+                <Search size={16} />
+                <input
+                  aria-label="Search predictions"
+                  placeholder="Search markets"
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage("Markets");
+                    setCategory("All");
+                    setFilter("Trending");
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape")
+                      e.currentTarget
+                        .closest("details")
+                        ?.removeAttribute("open");
+                  }}
+                />
+              </div>
+            </details>
+            <button
+              className={
+                page === "Portfolio"
+                  ? "header-portfolio active"
+                  : "header-portfolio"
+              }
+              aria-label="Portfolio"
+              title="Portfolio"
+              onClick={() => setPage("Portfolio")}
+            >
+              <Wallet size={18} />
+            </button>
             {state?.user ? (
               <>
                 <button
@@ -514,17 +570,20 @@ export default function Dashboard() {
                 </button>
                 <button
                   className="primary small"
+                  aria-label="Add credits"
                   onClick={() => setModal("credits")}
                 >
-                  <Plus size={15} /> Add credits
+                  <Plus size={14} />
+                  <span>Add credits</span>
                 </button>
                 <button
                   className="avatar"
-                  title={`${state.user.name} · Sign out`}
+                  aria-label="Sign out"
+                  title={state.user.name + " · Sign out"}
                   onClick={() => void call("auth/logout", {}, "Signed out")}
                 >
                   {state.user.name.slice(0, 1).toUpperCase()}
-                  <LogOut size={12} />
+                  <LogOut size={11} />
                 </button>
               </>
             ) : (
@@ -549,45 +608,17 @@ export default function Dashboard() {
                 </button>
               </>
             )}
-          </div>
-        </div>
-        <div className="nav-inner">
-          <nav className="main-nav">
-            {[
-              { label: "Markets", icon: <TrendingUp size={16} /> },
-              { label: "Live", icon: <Zap size={16} /> },
-              { label: "Combos", icon: <Layers3 size={16} /> },
-              { label: "Portfolio", icon: <Wallet size={16} /> },
-            ].map((n) => (
-              <button
-                key={n.label}
-                className={page === n.label ? "active" : ""}
-                onClick={() => {
-                  setPage(n.label);
-                  setFilter("Trending");
-                }}
-              >
-                {n.icon}
-                {n.label}
-                {n.label === "Live" && <span className="live-dot" />}
-                {n.label === "Combos" && legs.length > 0 && (
-                  <span className="count">{legs.length}</span>
-                )}
-              </button>
-            ))}
             {state?.user?.role === "admin" && (
               <button
-                className={page === "Admin" ? "active" : ""}
+                className="header-admin"
+                aria-label="Admin"
+                title="Admin"
                 onClick={() => setPage("Admin")}
               >
-                <ShieldCheck size={16} />
-                Admin
+                <ShieldCheck size={18} />
               </button>
             )}
-          </nav>
-          <span className="simulation-badge">
-            <span /> Simulated credits only
-          </span>
+          </div>
         </div>
       </header>
       <main className="main-container">
@@ -609,123 +640,85 @@ export default function Dashboard() {
           <>
             {["Markets", "Live", "Combos"].includes(page) && (
               <>
-                <div className="category-bar">
-                  {categories.map((c) => (
-                    <button
-                      className={category === c ? "selected" : ""}
-                      key={c}
-                      onClick={() => setCategory(c)}
-                    >
-                      {c}
-                    </button>
-                  ))}
-                  <span className="category-end">
-                    <Globe size={15} /> All topics
-                  </span>
-                </div>
-                <div className="page-heading">
-                  <div>
-                    <div className="eyebrow">THE WORLD, IN PROBABILITIES</div>
-                    <h1>
-                      {page === "Live"
-                        ? "Every moment. A new possibility."
-                        : page === "Combos"
-                          ? "Big ideas. Better together."
-                          : "What happens next?"}
-                    </h1>
-                    <p>
-                      {page === "Live"
-                        ? "Follow the action and trade live simulated events."
-                        : page === "Combos"
-                          ? "Combine your predictions across topics into one trade."
-                          : "Discover what the crowd thinks. Make your prediction."}
-                    </p>
-                  </div>
-                  <div className="heading-note">
-                    <Coins size={19} />
-                    <div>
-                      <strong>Real ideas. Test credits.</strong>
-                      <span>Explore markets with zero real money.</span>
+                {!showHome && (
+                  <>
+                    {" "}
+                    <div className="page-heading">
+                      <div>
+                        <div className="eyebrow">
+                          THE WORLD, IN PROBABILITIES
+                        </div>
+                        <h1>
+                          {page === "Live"
+                            ? "Every moment. A new possibility."
+                            : page === "Combos"
+                              ? "Big ideas. Better together."
+                              : "What happens next?"}
+                        </h1>
+                        <p>
+                          {page === "Live"
+                            ? "Follow the action and trade live simulated events."
+                            : page === "Combos"
+                              ? "Combine your predictions across topics into one trade."
+                              : "Discover what the crowd thinks. Make your prediction."}
+                        </p>
+                      </div>
+                      <div className="heading-note">
+                        <Coins size={19} />
+                        <div>
+                          <strong>Real ideas. Test credits.</strong>
+                          <span>Explore markets with zero real money.</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                {page === "Markets" && (
-                  <div className="feature-grid">
-                    <button
-                      className="feature-card feature-blue"
-                      onClick={() =>
-                        openMarket(
-                          markets.find((m) => m.id === "fed-rate") ??
-                            markets[0],
-                        )
-                      }
-                    >
-                      <div className="feature-copy">
-                        <span className="feature-tag">
-                          <Flame size={13} /> IN FOCUS
-                        </span>
-                        <h2>
-                          The next move
-                          <br />
-                          is anyone’s call.
-                        </h2>
-                        <p>Explore the markets moving the economy.</p>
-                        <span className="feature-link">
-                          See the prediction <ArrowUpRight size={16} />
-                        </span>
-                      </div>
-                      <div className="feature-art">
-                        <span className="art-ring ring-one" />
-                        <span className="art-ring ring-two" />
-                        <span className="feature-number">
-                          {probability(
-                            markets.find((m) => m.id === "fed-rate")
-                              ?.yes_price ?? 5000,
-                          )}
-                        </span>
-                        <span className="number-label">
-                          RATE CUT · DECEMBER
-                        </span>
-                        <svg viewBox="0 0 220 80">
-                          <path d="M0 65 L23 62 L37 69 L53 45 L69 49 L85 33 L103 40 L118 25 L138 32 L153 13 L171 19 L190 9 L215 15" />
-                        </svg>
-                      </div>
-                    </button>
-                    <button
-                      className="feature-card feature-dark"
-                      onClick={() => setPage("Combos")}
-                    >
-                      <div className="feature-copy">
-                        <span className="feature-tag">
-                          <Layers3 size={13} /> CROSS-CATEGORY COMBOS
-                        </span>
-                        <h2>
-                          One prediction?
-                          <br />
-                          Think bigger.
-                        </h2>
-                        <p>Your strongest convictions. One combo.</p>
-                        <span className="feature-link">
-                          Build a combo <ArrowUpRight size={16} />
-                        </span>
-                      </div>
-                      <div className="combo-art">
-                        <span className="art-chip chip-a">
-                          ⚽ <b>YES</b>
-                        </span>
-                        <span className="art-plus">+</span>
-                        <span className="art-chip chip-b">
-                          🌦️ <b>YES</b>
-                        </span>
-                        <span className="art-chip chip-c">
-                          🏛️ <b>NO</b>
-                        </span>
-                      </div>
-                    </button>
-                  </div>
+                  </>
                 )}
-                <div className="content-layout">
+                {showHome && (
+                  <TrendingHome
+                    markets={markets}
+                    connected={state.mode === "connected"}
+                    watchlist={state.watchlist}
+                    onOpen={openMarket}
+                    onWatch={(m) => {
+                      if (requireUser())
+                        void call("watchlist", { marketId: m.id });
+                    }}
+                    onTopic={(topic) => {
+                      chooseTopic(topic);
+                      if (topic === "All")
+                        requestAnimationFrame(() =>
+                          document
+                            .getElementById("trending-trades")
+                            ?.scrollIntoView({
+                              behavior: "smooth",
+                              block: "start",
+                            }),
+                        );
+                    }}
+                  />
+                )}
+                <div className="content-layout" id="trending-trades">
                   <section className="feed">
+                    <div className="trending-trades-heading">
+                      <div>
+                        <span className="section-kicker">
+                          FIND YOUR NEXT PREDICTION
+                        </span>
+                        <h2>
+                          {page === "Live"
+                            ? "Live markets"
+                            : page === "Combos"
+                              ? "Build your next combo"
+                              : category === "All"
+                                ? "Trending trades"
+                                : category + " markets"}
+                        </h2>
+                      </div>
+                      <span>
+                        <span className="tiny-live-dot" /> Simulated credits
+                        only
+                      </span>
+                    </div>
                     <div className="feed-toolbar">
                       <div className="feed-tabs">
                         {["Trending", "Ending soon", "Watchlist"].map((f) => (
@@ -758,7 +751,21 @@ export default function Dashboard() {
                         </select>
                       </label>
                     </div>
-                    <div className="market-grid">{shown.map(marketCard)}</div>
+                    <div className="market-grid">
+                      {cardGroups.map((group) => (
+                        <PredictionCard
+                          key={group[0].event_group || group[0].id}
+                          markets={group}
+                          saved={state.watchlist.includes(group[0].id)}
+                          onOpen={openMarket}
+                          onWatch={(m) => {
+                            if (requireUser())
+                              void call("watchlist", { marketId: m.id });
+                          }}
+                          onCombo={(m) => addLeg(m, "yes")}
+                        />
+                      ))}
+                    </div>
                     {!shown.length && (
                       <div className="empty">
                         <Search size={30} />
@@ -1355,7 +1362,11 @@ export default function Dashboard() {
         )}
         <footer className="site-footer">
           <div className="footer-brand">
-            leyona<span>Make your prediction.</span>
+            <div className="footer-wordmark">
+              <AbacusMark size={22} />
+              leyona
+            </div>
+            <span>Make your prediction.</span>
           </div>
           <p>
             A local prediction-market sandbox. Credits have no cash value.
@@ -1444,7 +1455,7 @@ export default function Dashboard() {
                   <>
                     <BarChart3 size={30} />
                     <p>Price history starts with the first trades.</p>
-                    <span>No fabricated price history.</span>
+                    <span>Trade this market to start its price history.</span>
                   </>
                 )}
               </div>
@@ -1827,7 +1838,7 @@ export default function Dashboard() {
               {modal === "credits" ? (
                 <Coins size={26} />
               ) : (
-                <BarChart3 size={26} />
+                <AbacusMark size={26} />
               )}
             </span>
             <h2>

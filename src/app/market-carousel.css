@@ -1,0 +1,360 @@
+/* Both featured stories and watch cards physically follow a horizontal drag. */
+.carousel-slide,
+.carousel-peek {
+  translate: var(--drag-offset, 0px) 0;
+  transition: translate 0.3s ease;
+}
+.gesture-dragging .carousel-slide,
+.gesture-dragging .carousel-peek {
+  transition: none;
+  animation: none;
+}
+
+/* A compact looping track with one complete-card position per progress dot. */
+.watch-auto-carousel {
+  width: 100%;
+  min-width: 0;
+}
+.watch-carousel-viewport {
+  --watch-visible: 3;
+  --watch-gap: 15px;
+  overflow: hidden;
+  width: 100%;
+  touch-action: pan-y pinch-zoom;
+  cursor: grab;
+  border-radius: 10px;
+}
+.watch-carousel-track {
+  display: flex;
+  width: 100%;
+  gap: var(--watch-gap);
+  align-items: stretch;
+  transition: transform 0.36s cubic-bezier(0.2, 0.7, 0.25, 1);
+  will-change: transform;
+}
+.watch-carousel-track.no-transition {
+  transition: none;
+}
+.watch-carousel-item {
+  flex: 0 0
+    calc(
+      (100% - (var(--active-visible) - 1) * var(--watch-gap)) /
+        var(--active-visible)
+    );
+  min-width: 0;
+}
+.watch-carousel-item .watch-market-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+}
+.watch-carousel-item .watch-image-wrap {
+  height: 112px;
+  flex-shrink: 0;
+}
+.watch-carousel-item .watch-question {
+  min-height: 49px;
+  font-size: 12px;
+  padding: 12px 13px 0;
+}
+.watch-carousel-item .watch-probability {
+  padding: 9px 13px 11px;
+}
+.watch-carousel-item .watch-probability > strong {
+  font-size: 22px;
+}
+.watch-carousel-item .watch-probability small {
+  font-size: 8px;
+}
+.watch-carousel-item .watch-volume {
+  margin-top: auto;
+  padding: 9px 13px;
+  font-size: 8px;
+}
+.watch-carousel-viewport.is-dragging,
+.watch-carousel-viewport.is-dragging * {
+  cursor: grabbing;
+  user-select: none;
+}
+.watch-carousel-controls {
+  display: grid;
+  grid-template-columns: 25px minmax(0, 1fr) 22px 25px;
+  align-items: center;
+  gap: 9px;
+  padding: 15px 0 0;
+}
+.watch-carousel-controls .carousel-pagination {
+  justify-content: center;
+  gap: 6px;
+}
+.watch-carousel-controls .carousel-pagination button {
+  width: 5px;
+  height: 5px;
+}
+.watch-carousel-controls .carousel-pagination button.current {
+  width: 19px;
+}
+.watch-carousel-pause {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  color: #9ca9bd;
+  padding: 0;
+}
+.mobile-probability-gauge {
+  display: none;
+}
+
+@media (max-width: 1000px) {
+  .watch-carousel-viewport {
+    --watch-visible: 2;
+  }
+}
+@media (max-width: 640px) {
+  .watch-carousel-viewport {
+    --watch-visible: 2;
+    --watch-gap: 12px;
+  }
+  .watch-carousel-item .watch-image-wrap {
+    height: 96px;
+  }
+  .watch-carousel-item .watch-question {
+    padding: 10px 11px 0;
+    font-size: 11px;
+    min-height: 48px;
+  }
+  .watch-carousel-item .watch-probability {
+    padding: 9px 11px 10px;
+    gap: 5px;
+  }
+  .watch-carousel-item .watch-probability > strong {
+    font-size: 21px;
+  }
+  .watch-carousel-item .watch-probability > strong small {
+    font-size: 8px;
+    display: block;
+    margin: 2px 0 0;
+  }
+  .watch-carousel-item .watch-probability > button {
+    padding: 6px 8px;
+    font-size: 9px;
+  }
+  .watch-carousel-item .watch-volume {
+    padding: 8px 11px;
+    font-size: 8px;
+  }
+  .watch-carousel-controls {
+    padding-top: 14px;
+  }
+
+  /* Binary mobile cards: compact question, probability gauge, full-width choices. */
+  .market-card.binary-market-card {
+    min-height: 164px;
+    padding: 12px 12px 0;
+  }
+  .binary-market-card .card-top {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) 62px;
+    gap: 8px;
+    min-height: 64px;
+    align-items: start;
+  }
+  .binary-market-card .card-question {
+    align-self: start;
+    font-size: 12px;
+    line-height: 1.5;
+    padding-top: 1px;
+  }
+  .binary-market-card .prediction-row-label,
+  .binary-market-card .prediction-row > strong {
+    display: none;
+  }
+  .binary-market-card .prediction-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    min-height: 36px;
+  }
+  .binary-market-card .prediction-row button {
+    min-height: 36px;
+    font-size: 12px;
+    font-weight: 650;
+    border-radius: 6px;
+  }
+  .binary-market-card .prediction-rows {
+    padding-top: 7px;
+    padding-bottom: 4px;
+  }
+  .mobile-probability-gauge {
+    display: block;
+    position: relative;
+    width: 62px;
+    height: 51px;
+    pointer-events: none;
+  }
+  .mobile-probability-gauge svg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 62px;
+    height: 42px;
+    fill: none;
+  }
+  .gauge-track {
+    stroke: #3d414b;
+    stroke-width: 4;
+    stroke-linecap: round;
+  }
+  .gauge-value {
+    stroke: #ed5c65;
+    stroke-width: 4;
+    stroke-linecap: round;
+  }
+  .gauge-positive {
+    stroke: #22bf8d;
+  }
+  .mobile-probability-gauge strong {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 19px;
+    text-align: center;
+    color: #eef2fa;
+    font-size: 13px;
+    line-height: 17px;
+  }
+  .mobile-probability-gauge small {
+    position: absolute;
+    top: 35px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: #a5bdec;
+    font-size: 8px;
+  }
+}
+/* Featured predictions use the same continuous, cloned track as watch cards.
+   The frame stays narrow on desktop, while neighboring full cards remain painted. */
+.featured-auto-carousel {
+  position: relative;
+  padding-top: 38px;
+}
+.featured-auto-carousel .watch-carousel-viewport {
+  --watch-visible: 1;
+  --watch-gap: 24px;
+  width: var(--slide-width);
+  margin: 0 auto;
+  overflow: visible;
+  border-radius: 0;
+  padding: 0;
+}
+.featured-auto-carousel .carousel-slide {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  animation: none;
+  translate: none;
+}
+.featured-auto-carousel .watch-carousel-item {
+  flex-basis: 100%;
+}
+.featured-auto-carousel .watch-carousel-controls {
+  display: flex;
+  position: static;
+  width: var(--slide-width);
+  margin: 0 auto;
+  padding: 15px 28px 22px;
+  gap: 16px;
+}
+.featured-auto-carousel .carousel-pagination {
+  justify-content: flex-start;
+}
+.featured-auto-carousel .watch-rail-arrow {
+  position: absolute;
+  top: 43%;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #151a23e6;
+  z-index: 3;
+}
+.featured-previous {
+  left: 16px;
+}
+.featured-next {
+  right: 16px;
+}
+.featured-auto-carousel .watch-carousel-pause {
+  flex-shrink: 0;
+  border: 1px solid #303846;
+  border-radius: 50%;
+}
+.featured-auto-carousel .carousel-caption {
+  margin-left: auto;
+}
+@media (max-width: 1100px) {
+  .featured-auto-carousel {
+    padding-top: 30px;
+  }
+}
+@media (max-width: 760px) {
+  .featured-auto-carousel {
+    padding-top: 27px;
+  }
+  .featured-auto-carousel .watch-rail-arrow {
+    width: 28px;
+    height: 28px;
+  }
+  .featured-previous {
+    left: 8px;
+  }
+  .featured-next {
+    right: 8px;
+  }
+  .featured-auto-carousel .watch-carousel-controls {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}
+@media (max-width: 640px) {
+  .featured-auto-carousel {
+    padding-top: 12px;
+  }
+  .featured-auto-carousel .watch-carousel-viewport {
+    --watch-visible: 1;
+    --watch-gap: 8px;
+  }
+  .featured-auto-carousel .carousel-slide {
+    padding: 0;
+  }
+  .featured-auto-carousel .watch-carousel-controls {
+    position: relative;
+    justify-content: center;
+    width: 100%;
+    height: 42px;
+    padding: 18px 0;
+  }
+  .featured-auto-carousel .watch-rail-arrow {
+    display: none;
+  }
+  .featured-auto-carousel .watch-carousel-pause {
+    position: absolute;
+    right: 16px;
+    top: 12px;
+    border: 0;
+    opacity: 0.5;
+  }
+  .featured-auto-carousel .carousel-caption {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .watch-carousel-track,
+  .carousel-slide,
+  .carousel-peek {
+    transition: none;
+  }
+}
